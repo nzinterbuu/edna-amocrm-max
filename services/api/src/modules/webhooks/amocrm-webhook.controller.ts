@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AmocrmWebhookValidator } from '../amocrm/amocrm-webhook.validator';
+import { isAmocrmOutgoingMessageHook } from '../messages/amocrm-outgoing-webhook.guard';
 import { OutboundAmocrmService } from '../messages/outbound-amocrm.service';
 import { WebhookLogService } from './webhook-log.service';
 
@@ -47,10 +48,12 @@ export class AmocrmWebhookController {
     }
 
     try {
-      const result = await this.outbound.handleWebhook(
-        scopeId,
-        body as Parameters<OutboundAmocrmService['handleWebhook']>[1],
-      );
+      if (!isAmocrmOutgoingMessageHook(body)) {
+        throw new BadRequestException(
+          'Invalid amoCRM outgoing message webhook payload shape',
+        );
+      }
+      const result = await this.outbound.handleWebhook(scopeId, body);
       await this.log.log({
         source: 'amocrm_outbound',
         requestBody: body,
