@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Installation {
+  id                String   @id @default(uuid()) @db.Uuid
+  amocrmAccountId   String   @unique @map("amocrm_account_id") @db.VarChar(64)
+  amocrmSubdomain   String   @map("amocrm_subdomain") @db.VarChar(255)
+  referer           String?  @db.VarChar(512)
+  oauthAccessToken  String   @map("oauth_access_token")
+  oauthRefreshToken String   @map("oauth_refresh_token")
+  oauthExpiresAt    DateTime @map("oauth_expires_at") @db.Timestamptz(6)
+  status            String   @default("active") @db.VarChar(32)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  ednaTenants        EdnaTenant[]
+  channelConnections ChannelConnection[]
+  integrationErrors  IntegrationError[]
+
+  @@map("installations")
+}
+
+model EdnaTenant {
+  id                     String   @id @default(uuid()) @db.Uuid
+  installationId         String   @map("installation_id") @db.Uuid
+  ednaTenantExternalId   String   @map("edna_tenant_external_id") @db.VarChar(128)
+  authState              String   @default("connected") @map("auth_state") @db.VarChar(32)
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  installation       Installation        @relation(fields: [installationId], references: [id], onDelete: Cascade)
+  channelConnections ChannelConnection[]
+
+  @@unique([installationId, ednaTenantExternalId])
+  @@map("edna_tenants")
+}
+
+model ChannelConnection {
+  id               String    @id @default(uuid()) @db.Uuid
+  installationId   String    @map("installation_id") @db.Uuid
+  ednaTenantId     String    @map("edna_tenant_id") @db.Uuid
+  displayName      String    @map("display_name") @db.VarChar(255)
+  maxBotId         String    @map("max_bot_id") @db.VarChar(128)
+  channelId        String    @map("channel_id") @db.VarChar(128)
+  scopeId          String    @unique @map("scope_id") @db.VarChar(255)
+  status           String    @default("active") @db.VarChar(32)
+  connectedAt      DateTime  @default(now()) @map("connected_at") @db.Timestamptz(6)
+  disconnectedAt   DateTime? @map("disconnected_at") @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  installation         Installation          @relation(fields: [installationId], references: [id], onDelete: Cascade)
+  ednaTenant           EdnaTenant            @relation(fields: [ednaTenantId], references: [id], onDelete: Cascade)
+  conversationMappings ConversationMapping[]
+  messageMappings      MessageMapping[]
+  webhookLogs          WebhookLog[]
+  integrationErrors    IntegrationError[]
+
+  @@unique([installationId, maxBotId])
+  @@map("channel_connections")
+}
+
+model ConversationMapping {
+  id                   String    @id @default(uuid()) @db.Uuid
+  channelConnectionId  String    @map("channel_connection_id") @db.Uuid
+  maxChatId            String    @map("max_chat_id") @db.VarChar(255)
+  maxUserId            String    @map("max_user_id") @db.VarChar(255)
+  amocrmConversationId String    @map("amocrm_conversation_id") @db.VarChar(255)
+  amocrmContactId      BigInt?   @map("amocrm_contact_id")
+  amocrmLeadId         BigInt?   @map("amocrm_lead_id")
+  firstMessageAt       DateTime? @map("first_message_at") @db.Timestamptz(6)
+  lastMessageAt        DateTime? @map("last_message_at") @db.Timestamptz(6)
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  channelConnection ChannelConnection @relation(fields: [channelConnectionId], references: [id], onDelete: Cascade)
+  messageMappings   MessageMapping[]
+
+  @@unique([channelConnectionId, maxChatId])
+  @@unique([channelConnectionId, amocrmConversationId])
+  @@map("conversation_mappings")
+}
+
+model MessageMapping {
+  id                    String   @id @default(uuid()) @db.Uuid
+  channelConnectionId   String   @map("channel_connection_id") @db.Uuid
+  conversationMappingId String?  @map("conversation_mapping_id") @db.Uuid
+  direction             String   @db.VarChar(16)
+  sourceSystem          String   @map("source_system") @db.VarChar(16)
+  sourceMessageId       String   @map("source_message_id") @db.VarChar(255)
+  targetMessageId       String?  @map("target_message_id") @db.VarChar(255)
+  amoMsgid              String?  @map("amo_msgid") @db.VarChar(255)
+  payload               Json     @db.JsonB
+  deliveryStatus        String   @default("accepted") @map("delivery_status") @db.VarChar(32)
+  errorCode             String?  @map("error_code") @db.VarChar(64)
+  errorMessage          String?  @map("error_message")
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  channelConnection   ChannelConnection    @relation(fields: [channelConnectionId], references: [id], onDelete: Cascade)
+  conversationMapping ConversationMapping? @relation(fields: [conversationMappingId], references: [id], onDelete: SetNull)
+
+  @@unique([channelConnectionId, sourceSystem, sourceMessageId])
+  @@map("message_mappings")
+}
+
+model WebhookLog {
+  id                  String   @id @default(uuid()) @db.Uuid
+  channelConnectionId String?  @map("channel_connection_id") @db.Uuid
+  source              String   @db.VarChar(32)
+  requestHeaders      Json?    @map("request_headers") @db.JsonB
+  requestBody         Json?    @map("request_body") @db.JsonB
+  responseStatus      Int?     @map("response_status")
+  responseBody        Json?    @map("response_body") @db.JsonB
+  processingStatus    String   @default("accepted") @map("processing_status") @db.VarChar(32)
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  channelConnection ChannelConnection? @relation(fields: [channelConnectionId], references: [id], onDelete: SetNull)
+
+  @@map("webhook_logs")
+}
+
+model IntegrationError {
+  id                  String    @id @default(uuid()) @db.Uuid
+  channelConnectionId String?   @map("channel_connection_id") @db.Uuid
+  installationId      String?   @map("installation_id") @db.Uuid
+  scope               String    @db.VarChar(64)
+  code                String    @db.VarChar(64)
+  message             String
+  details             Json?     @db.JsonB
+  resolved            Boolean   @default(false)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  resolvedAt          DateTime? @map("resolved_at") @db.Timestamptz(6)
+
+  channelConnection ChannelConnection? @relation(fields: [channelConnectionId], references: [id], onDelete: SetNull)
+  installation      Installation?      @relation(fields: [installationId], references: [id], onDelete: SetNull)
+
+  @@map("integration_errors")
+}

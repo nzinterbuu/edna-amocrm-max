@@ -1,0 +1,32 @@
+{
+  "widget": {
+    "name": "MAX ↔ amoCRM (edna Pulse)",
+    "description": "Интеграция входящих и исходящих сообщений MAX Bot с amoCRM Inbox через edna Pulse.",
+    "short_description": "MAX и Inbox через edna Pulse"
+  },
+  "settings": {
+    "backend_url": "URL backend интеграции (https://api.example.com)"
+  },
+  "ui": {
+    "title": "Интеграция MAX",
+    "status": "Статус",
+    "channels": "Подключённые каналы",
+    "connect": "Подключить",
+    "disconnect": "Отключить",
+    "reconnect": "Переподключить",
+    "diagnostics": "Диагностика",
+    "loading": "Загрузка…",
+    "installation_id": "ID установки",
+    "edna_bind_hint": "Привязка edna (код сессии)",
+    "edna_code": "Код edna",
+    "bind": "Привязать edna",
+    "max_bot": "MAX Bot ID",
+    "display_name": "Название канала",
+    "health": "Проверка здоровья",
+    "no_installation": "Установка не найдена. Включите виджет (OAuth).",
+    "last_in": "Последнее входящее",
+    "last_out": "Последнее исходящее",
+    "last_error": "Последняя ошибка",
+    "copy_webhook": "Webhook MAX (скопируйте в edna Pulse)"
+  }
+}

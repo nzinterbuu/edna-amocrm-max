@@ -1,0 +1,32 @@
+{
+  "widget": {
+    "name": "MAX ↔ amoCRM (edna Pulse)",
+    "description": "Route MAX Bot messages to amoCRM Inbox and back via edna Pulse.",
+    "short_description": "MAX and Inbox via edna Pulse"
+  },
+  "settings": {
+    "backend_url": "Integration backend base URL (https://api.example.com)"
+  },
+  "ui": {
+    "title": "MAX integration",
+    "status": "Status",
+    "channels": "Connected channels",
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "reconnect": "Reconnect",
+    "diagnostics": "Diagnostics",
+    "loading": "Loading…",
+    "installation_id": "Installation ID",
+    "edna_bind_hint": "Bind edna session (auth code)",
+    "edna_code": "edna code",
+    "bind": "Bind edna",
+    "max_bot": "MAX Bot ID",
+    "display_name": "Channel title",
+    "health": "Health check",
+    "no_installation": "No installation. Enable the widget (OAuth) first.",
+    "last_in": "Last inbound",
+    "last_out": "Last outbound",
+    "last_error": "Last error",
+    "copy_webhook": "MAX webhook URL (configure in edna Pulse)"
+  }
+}

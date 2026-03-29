@@ -1,0 +1,24 @@
+{
+  "widget": {
+    "name": "widget.name",
+    "description": "widget.description",
+    "short_description": "widget.short_description",
+    "version": "1.0.0",
+    "interface_version": 2,
+    "init_once": true,
+    "locale": ["ru", "en"],
+    "installation": true,
+    "is_showcase": false,
+    "support": {
+      "link": "https://example.com",
+      "email": "support@example.com"
+    },
+    "settings": {
+      "backend_url": {
+        "name": "settings.backend_url",
+        "type": "text",
+        "required": true
+      }
+    }
+  }
+}
