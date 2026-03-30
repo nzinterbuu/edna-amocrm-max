@@ -1,243 +1,139 @@
 /**
- * amoCRM widget — setup, status, channels, diagnostics only.
- * Transport and secrets stay on backend. TODO: verify manifest keys & areas vs official widget structure.
+ * amoCRM widget — lifecycle + минимальный UI (настройки и вложенные области).
+ * Дальше: вернуть вызовы backend в render после проверки контейнеров.
  */
-define(['jquery', 'underscore'], function ($, _) {
+define(['jquery'], function ($) {
   'use strict';
 
-  function trimSlash(url) {
-    return String(url || '').replace(/\/+$/, '');
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (ch) {
+      return (
+        {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;',
+        }[ch] || ch
+      );
+    });
   }
 
-  function api(self, path) {
-    var base = trimSlash(self.get_settings().backend_url);
-    return base + path;
-  }
-
-  function getLang(self, key) {
+  /** amoCRM кладёт widget_code в params / system; без него #work-area-* не находится. */
+  function resolveWidgetCode(self) {
     try {
-      return (self.lang && self.lang[key]) || key;
+      if (self.params && self.params.widget_code) {
+        return String(self.params.widget_code);
+      }
+      if (
+        typeof AMOCRM !== 'undefined' &&
+        AMOCRM.widgets &&
+        AMOCRM.widgets.system &&
+        AMOCRM.widgets.system.widget_code
+      ) {
+        return String(AMOCRM.widgets.system.widget_code);
+      }
+      var s = self.get_settings && self.get_settings();
+      if (s && s.widget_code) {
+        return String(s.widget_code);
+      }
     } catch (e) {
-      return key;
+      console.error('[edna-max] resolveWidgetCode', e);
     }
+    return '';
+  }
+
+  function mergedSettings(self) {
+    var sys =
+      (typeof AMOCRM !== 'undefined' && AMOCRM.widgets && AMOCRM.widgets.system) ||
+      {};
+    return $.extend({}, sys, self.params || {});
+  }
+
+  function minimalMarkup(widgetCode) {
+    return (
+      '<div class="edna-max-mvp" style="padding:12px;font-family:sans-serif;max-width:640px">' +
+      '<h3>MAX Widget Loaded</h3>' +
+      '<p style="margin:8px 0;color:#333">Виджет инициализирован.</p>' +
+      '<p style="font-size:12px;color:#666">widget_code: <code>' +
+      escapeHtml(widgetCode || '—') +
+      '</code></p>' +
+      '</div>'
+    );
+  }
+
+  function mountIntoSelectors(self, html) {
+    var code = resolveWidgetCode(self);
+    var $work = code ? $('#work-area-' + code) : $();
+    if ($work.length) {
+      $work.html(html);
+      return $work;
+    }
+    var $settings = $('.widget-settings__body');
+    if ($settings.length) {
+      $settings.html(html);
+      return $settings;
+    }
+    console.warn('[edna-max] no container (work-area or widget-settings__body)');
+    return $();
   }
 
   return function () {
     var self = this;
 
     self.get_settings = function () {
-      return (typeof AMOCRM !== 'undefined' && AMOCRM.widgets && AMOCRM.widgets.system) || {};
+      return mergedSettings(self);
     };
 
     self.callbacks = {
-      settings: function () {
-        return true;
-      },
       init: function () {
+        try {
+          console.log('[edna-max] init');
+        } catch (e) {
+          console.error('[edna-max] init', e);
+        }
         return true;
       },
+
       bind_actions: function () {
         return true;
       },
-      render: function () {
-        var $w = $('#work-area-' + self.get_settings().widget_code);
-        if (!$w.length) {
-          return true;
+
+      /** Экран настроек интеграции (locations: settings) — основной контейнер amoCRM. */
+      settings: function () {
+        try {
+          console.log('[edna-max] settings()');
+          var code = resolveWidgetCode(self);
+          var $box = $('.widget-settings__body');
+          if ($box.length) {
+            $box.html(minimalMarkup(code));
+          } else {
+            mountIntoSelectors(self, minimalMarkup(code));
+          }
+        } catch (e) {
+          console.error('[edna-max] settings', e);
         }
-        var acc =
-          typeof AMOCRM !== 'undefined' && AMOCRM.constant
-            ? AMOCRM.constant('account')
-            : null;
-        var accountId = acc && acc.id;
-        if (!accountId) {
-          $w.html('<p>' + getLang(self, 'ui.no_installation') + '</p>');
-          return true;
-        }
-
-        $w.html('<p class="edna-max-loading">' + getLang(self, 'ui.loading') + '</p>');
-
-        $.getJSON(
-          api(self, '/api/widget/bootstrap'),
-          { amocrm_account_id: String(accountId) },
-        )
-          .done(function (data) {
-            renderDashboard($w, data, self);
-          })
-          .fail(function () {
-            $w.html('<p>Bootstrap failed. Check backend_url.</p>');
-          });
-
         return true;
       },
+
+      /** Карточки / «everywhere»: work-area-{widget_code} или fallback. */
+      render: function () {
+        try {
+          console.log('[edna-max] render()');
+          var code = resolveWidgetCode(self);
+          mountIntoSelectors(self, minimalMarkup(code));
+        } catch (e) {
+          console.error('[edna-max] render', e);
+        }
+        return true;
+      },
+
       destroy: function () {},
+
       onSave: function () {
         return true;
       },
     };
-
-    function renderDashboard($root, data, self) {
-      var inst = data.installation;
-      var L = function (k) {
-        return getLang(self, k);
-      };
-      if (!inst) {
-        $root.html('<p>' + L('ui.no_installation') + '</p>');
-        return;
-      }
-
-      var channels = data.channels || [];
-      var html = [];
-      html.push('<div class="edna-max-widget" style="font-family:sans-serif;max-width:720px">');
-      html.push('<h2>' + L('ui.title') + '</h2>');
-      html.push(
-        '<p><strong>' +
-          L('ui.installation_id') +
-          ':</strong> <code>' +
-          inst.installation_id +
-          '</code></p>',
-      );
-      html.push(
-        '<p><strong>' +
-          L('ui.status') +
-          ':</strong> ' +
-          inst.status +
-          ' · sub: ' +
-          inst.subdomain +
-          '</p>',
-      );
-
-      html.push('<h3>' + L('ui.channels') + '</h3>');
-      if (!channels.length) {
-        html.push('<p>—</p>');
-      } else {
-        html.push('<ul>');
-        channels.forEach(function (c) {
-          html.push('<li style="margin:8px 0">');
-          html.push(
-            '<strong>' +
-              _.escape(c.display_name) +
-              '</strong> · bot: ' +
-              _.escape(c.max_bot_id),
-          );
-          html.push(
-            '<div style="font-size:12px;opacity:.85">scope: ' +
-              _.escape(c.scope_id) +
-              '</div>',
-          );
-          html.push(
-            '<div style="font-size:11px;margin-top:4px">' +
-              L('ui.copy_webhook') +
-              ':<br/><input readonly style="width:100%" value="' +
-              _.escape(api(self, '/api/webhooks/max/' + c.id)) +
-              '"/></div>',
-          );
-          html.push(
-            '<button type="button" class="button-input edna-disconnect" data-id="' +
-              _.escape(c.id) +
-              '" style="margin-top:6px">' +
-              L('ui.disconnect') +
-              '</button> ',
-          );
-          html.push(
-            '<button type="button" class="button-input edna-health" data-id="' +
-              _.escape(c.id) +
-              '">' +
-              L('ui.health') +
-              '</button>',
-          );
-          html.push('</li>');
-        });
-        html.push('</ul>');
-      }
-
-      html.push('<h3>' + L('ui.connect') + '</h3>');
-      html.push('<div style="border:1px solid #ddd;padding:12px;border-radius:6px">');
-      html.push(
-        '<p>' +
-          L('ui.edna_bind_hint') +
-          ': <input id="edna-code" placeholder="' +
-          L('ui.edna_code') +
-          '" style="width:260px"/></p>',
-      );
-      html.push('<p><button type="button" id="edna-bind" class="button-input">' + L('ui.bind') + '</button></p>');
-      html.push('<hr/>');
-      html.push(
-        '<p>' +
-          L('ui.display_name') +
-          ': <input id="ch-name" style="width:220px"/> ' +
-          L('ui.max_bot') +
-          ': <input id="ch-bot" style="width:220px"/></p>',
-      );
-      html.push(
-        '<p><em>edna tenant id после привязки (из ответа bind):</em> <input id="ch-tenant" style="width:360px"/></p>',
-      );
-      html.push(
-        '<p><button type="button" id="ch-create" class="button-input">' +
-          L('ui.connect') +
-          '</button></p>',
-      );
-      html.push('</div>');
-
-      html.push('<h3 id="diag-title">' + L('ui.diagnostics') + '</h3>');
-      html.push('<pre id="diag-out" style="background:#f7f7f7;padding:10px;overflow:auto"></pre>');
-      html.push('</div>');
-
-      $root.html(html.join(''));
-
-      $root.on('click', '#edna-bind', function () {
-        var code = $('#edna-code').val();
-        $.ajax({
-          url: api(self, '/api/edna/session/bind'),
-          method: 'POST',
-          contentType: 'application/json',
-          data: JSON.stringify({
-            installation_id: inst.installation_id,
-            edna_auth_code: code,
-          }),
-        }).done(function (r) {
-          $('#ch-tenant').val(r.tenant_id);
-          $('#diag-out').text(JSON.stringify(r, null, 2));
-        });
-      });
-
-      $root.on('click', '#ch-create', function () {
-        $.ajax({
-          url: api(self, '/api/channel-connections'),
-          method: 'POST',
-          contentType: 'application/json',
-          data: JSON.stringify({
-            installation_id: inst.installation_id,
-            display_name: $('#ch-name').val(),
-            edna_tenant_id: $('#ch-tenant').val(),
-            max_bot_id: $('#ch-bot').val(),
-          }),
-        }).done(function (r) {
-          $('#diag-out').text(JSON.stringify(r, null, 2));
-          self.callbacks.render();
-        });
-      });
-
-      $root.on('click', '.edna-disconnect', function () {
-        var id = $(this).data('id');
-        $.ajax({
-          url: api(self, '/api/channel-connections/' + encodeURIComponent(id) + '/disconnect'),
-          method: 'POST',
-          contentType: 'application/json',
-          data: JSON.stringify({ reason: 'manual_disconnect' }),
-        }).always(function () {
-          self.callbacks.render();
-        });
-      });
-
-      $root.on('click', '.edna-health', function () {
-        var id = $(this).data('id');
-        $.getJSON(api(self, '/api/channel-connections/' + encodeURIComponent(id) + '/health')).done(
-          function (r) {
-            $('#diag-out').text(JSON.stringify(r, null, 2));
-          },
-        );
-      });
-    }
 
     return this;
   };
