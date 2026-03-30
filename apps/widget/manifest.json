@@ -1,5 +1,7 @@
 {
+  "locations": ["settings", "everywhere"],
   "widget": {
+    "code": "edna_max_pulse_imbox",
     "name": "widget.name",
     "description": "widget.description",
     "short_description": "widget.short_description",
