@@ -41,16 +41,17 @@ npm run start:dev
 
 ## Виджет amoCRM
 
-Файлы: `apps/widget/` (`manifest.json`, `script.js`, `i18n/`).
+Файлы: `apps/widget/` (`manifest.json`, `script.js`, `i18n/`). Подробности и режим **install-safe**: `apps/widget/README_WIDGET.md`.
 
-Сборка архива для загрузки в amoCRM:
+Сборка `widget.zip` (корень архива — `manifest.json`, `script.js`, папка `i18n/`):
 
 ```bash
-cd apps/widget
-zip -r widget.zip manifest.json script.js i18n
+node scripts/build-widget-zip.js
 ```
 
-В настройках виджета задайте **backend URL** (тот же `APP_BASE_URL`). Redirect URI интеграции в amoCRM: `https://<ваш-backend>/api/integrations/amocrm/oauth/callback`.
+Либо из `apps/widget`: `zip -r widget.zip manifest.json script.js i18n` (Linux/macOS).
+
+Redirect URI интеграции в amoCRM: `https://<ваш-backend>/api/integrations/amocrm/oauth/callback`.
 
 После установки виджета: OAuth создаёт запись `installation`. Затем в UI виджета: привязка edna (заглушка обмена кода — см. `TODO` в `EdnaSessionService`), создание `channel connection` (вызов `POST /v2/origin/custom/{channel_id}/connect`, сохранение `scope_id`).
 
