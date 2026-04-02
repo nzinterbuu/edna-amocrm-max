@@ -53,6 +53,7 @@ export class OutboundAmocrmService {
 
     const conn = await this.prisma.channelConnection.findFirst({
       where: { scopeId, status: 'active' },
+      include: { ednaTenant: true },
     });
     if (!conn) {
       this.log.warn(`No connection for scope_id=${scopeId}`);
@@ -111,9 +112,10 @@ export class OutboundAmocrmService {
     const text = inner.message.text ?? '';
     const sender =
       this.appConfig.ednaPulseSenderDefault ?? conn.maxBotId;
+    const pulseApiKey = conn.ednaTenant.ednaApiKey;
     try {
       const ednaResp = await this.retries.withRetries('edna-outbound', () =>
-        this.edna.sendText(sender, mapping.maxUserId, text),
+        this.edna.sendText(sender, mapping.maxUserId, text, pulseApiKey),
       );
       await this.prisma.messageMapping.updateMany({
         where: {

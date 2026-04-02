@@ -34,4 +34,34 @@ export class EdnaSessionService {
     });
     return { tenant_id: tenant.id, status: 'connected' as const };
   }
+
+  /** Single Pulse logical tenant per installation; API key comes from the widget. */
+  async ensurePulseTenant(installationId: string, apiKey: string) {
+    await this.prisma.installation.findFirstOrThrow({
+      where: { id: installationId, status: 'active' },
+    });
+    const k = apiKey?.trim();
+    if (!k) {
+      throw new IntegrationException('EDNA_API_KEY', 'api_key required');
+    }
+    const externalId = 'edna_pulse';
+    return this.prisma.ednaTenant.upsert({
+      where: {
+        installationId_ednaTenantExternalId: {
+          installationId,
+          ednaTenantExternalId: externalId,
+        },
+      },
+      create: {
+        installationId,
+        ednaTenantExternalId: externalId,
+        ednaApiKey: k,
+        authState: 'connected',
+      },
+      update: {
+        ednaApiKey: k,
+        authState: 'connected',
+      },
+    });
+  }
 }

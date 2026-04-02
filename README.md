@@ -53,7 +53,7 @@ node scripts/build-widget-zip.js
 
 Redirect URI интеграции в amoCRM: `https://<ваш-backend>/api/integrations/amocrm/oauth/callback`.
 
-После установки виджета: OAuth создаёт запись `installation`. Затем в UI виджета: привязка edna (заглушка обмена кода — см. `TODO` в `EdnaSessionService`), создание `channel connection` (вызов `POST /v2/origin/custom/{channel_id}/connect`, сохранение `scope_id`).
+После установки виджета: OAuth создаёт `installation`. В настройках виджета укажите URL бэкенда, введите **API-ключ** и **ID канала** MAX из edna Pulse и нажмите **«Подключить канал»** — бэкенд сохранит ключ в `edna_tenants`, вызовет Chats API amoCRM и вернёт `scope_id`. Тело `POST /api/channel-connections`: `installation_id`, `display_name`, `api_key`, `channel_id`.
 
 ## Webhooks для тестов
 

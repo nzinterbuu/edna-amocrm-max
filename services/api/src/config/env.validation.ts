@@ -34,8 +34,10 @@ class EnvironmentVariables {
   @IsOptional()
   EDNA_API_BASE_URL?: string;
 
+  /** Fallback, если ключ задаётся только из виджета (Pulse) — можно не задавать */
   @IsString()
-  EDNA_API_KEY!: string;
+  @IsOptional()
+  EDNA_API_KEY?: string;
 
   @IsUrl({ require_tld: false })
   APP_BASE_URL!: string;

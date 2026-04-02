@@ -36,7 +36,14 @@ export class EdnaMaxOutboundClient {
     sender: string,
     maxId: string,
     text: string,
+    pulseApiKey?: string | null,
   ): Promise<EdnaMaxOutboundOk> {
+    const key = (pulseApiKey && pulseApiKey.trim()) || this.config.ednaApiKey;
+    if (!key) {
+      throw new Error(
+        'EDNA API key missing: set EDNA_API_KEY or connect channel with Pulse API key in widget',
+      );
+    }
     const body: EdnaMaxOutboundBody = {
       sender,
       maxId,
@@ -46,7 +53,7 @@ export class EdnaMaxOutboundClient {
       const { data } = await axios.post<EdnaMaxOutboundOk>(this.url(), body, {
         headers: {
           'Content-Type': 'application/json',
-          'X-API-KEY': this.config.ednaApiKey,
+          'X-API-KEY': key,
         },
         timeout: 30_000,
       });

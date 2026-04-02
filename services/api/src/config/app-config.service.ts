@@ -46,8 +46,9 @@ export class AppConfigService {
     );
   }
 
-  get ednaApiKey(): string {
-    return this.config.getOrThrow<string>('EDNA_API_KEY');
+  /** Env fallback when connection has no Pulse API key in DB */
+  get ednaApiKey(): string | undefined {
+    return this.config.get<string>('EDNA_API_KEY');
   }
 
   get appBaseUrl(): string {

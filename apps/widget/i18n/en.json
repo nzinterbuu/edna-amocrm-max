@@ -3,5 +3,8 @@
     "name": "MAX Widget",
     "description": "MAX (edna Pulse) integration with amoCRM Inbox.",
     "short_description": "MAX and Inbox"
+  },
+  "settings": {
+    "backend_url": "Integration backend URL (https://…)"
   }
 }
