@@ -4,19 +4,15 @@
     "description": "MAX (edna Pulse) integration with amoCRM Inbox.",
     "short_description": "MAX and Inbox"
   },
-  "advanced": {
-    "title": "Settings"
-  },
   "settings": {
-    "backend_url": "Backend URL"
+    "backend_url": "Backend URL",
+    "api_key": "API key",
+    "channel_id": "Channel ID"
   },
   "pulse": {
-    "section_title": "MAX channel (edna Pulse)",
-    "api_key": "API key",
-    "channel_id": "Channel ID",
     "connect": "Connect channel",
     "display_name": "MAX channel (edna Pulse)",
-    "need_backend": "Set backend URL and save settings.",
+    "need_backend": "Set Backend URL and save settings if needed.",
     "fill_credentials": "Enter API key and channel ID.",
     "need_account": "Could not detect amoCRM account.",
     "need_installation": "Installation not found. Complete OAuth first.",
