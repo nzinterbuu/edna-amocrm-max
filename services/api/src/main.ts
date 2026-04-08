@@ -35,9 +35,18 @@ async function bootstrap() {
     }),
   );
 
+  // Виджет Kommo/amoCRM вызывает API из браузера — без открытого CORS bootstrap падает с status 0.
   app.enableCors({
-    origin: true,
-    credentials: true,
+    origin: '*',
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Accept',
+      'Authorization',
+      'X-Requested-With',
+      'X-Signature',
+    ],
+    credentials: false,
   });
 
   const port = process.env.PORT ?? 3000;

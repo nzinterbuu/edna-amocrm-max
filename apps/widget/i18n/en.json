@@ -18,6 +18,7 @@
     "need_installation": "Installation not found. Complete OAuth first.",
     "success": "Connected. scope_id: ",
     "error": "Error: ",
-    "network": "Could not reach server (bootstrap)."
+    "network": "Could not reach server (bootstrap).",
+    "bootstrap_hint_status0": "Common causes: Backend URL must be full https://…, CORS, mixed content, or SSL. Open the bootstrap URL in a browser tab to verify."
   }
 }

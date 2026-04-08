@@ -8,6 +8,18 @@ define(['jquery'], function ($) {
       return String(url || '').replace(/\/+$/, '');
     }
 
+    /** Если схема не указана, браузер считает URL относительным → запрос уходит на домен Kommo и падает. */
+    function normalizeBackendUrl(raw) {
+      var u = String(raw || '').trim();
+      if (!u) {
+        return '';
+      }
+      if (!/^https?:\/\//i.test(u)) {
+        u = 'https://' + u.replace(/^\/+/, '');
+      }
+      return trimSlash(u);
+    }
+
     function tr(path, fallback) {
       var parts = path.split('.');
       var node = self.langs || {};
@@ -95,7 +107,45 @@ define(['jquery'], function ($) {
       } catch (e) {
         /* ignore */
       }
+      try {
+        if (typeof APP !== 'undefined' && APP.constant) {
+          var acc2 = APP.constant('account');
+          if (acc2 && acc2.id != null) {
+            return String(acc2.id);
+          }
+        }
+      } catch (e2) {
+        /* ignore */
+      }
       return null;
+    }
+
+    function describeBootstrapFailure(xhr, textStatus, errorThrown, ru) {
+      var st = xhr && typeof xhr.status === 'number' ? xhr.status : 0;
+      var base = tr(
+        'pulse.network',
+        ru
+          ? 'Не удалось связаться с сервером (bootstrap).'
+          : 'Could not reach server (bootstrap).',
+      );
+      if (st === 0) {
+        return (
+          base +
+          ' ' +
+          tr(
+            'pulse.bootstrap_hint_status0',
+            ru
+              ? 'Частая причина: неверный Backend URL (нужен полный https://…), CORS, смешанный контент (страница https, API http), или сертификат. Откройте в браузере: «URL» + /api/widget/bootstrap?amocrm_account_id=… и проверьте ответ.'
+              : 'Common causes: missing https:// in Backend URL, CORS, mixed content (https page → http API), or SSL. Open «URL»/api/widget/bootstrap?amocrm_account_id=… in a browser tab.',
+          )
+        );
+      }
+      var tail =
+        (xhr && xhr.responseText && xhr.responseText.slice(0, 200)) ||
+        textStatus ||
+        errorThrown ||
+        '';
+      return base + ' HTTP ' + st + (tail ? ' — ' + tail : '');
     }
 
     function appendConnectUi($area) {
@@ -120,7 +170,7 @@ define(['jquery'], function ($) {
         var $msg = $area.find('.edna-pulse-msg');
         $msg.text('').css('color', '');
 
-        var backend = trimSlash(readField('backend_url'));
+        var backend = normalizeBackendUrl(readField('backend_url'));
         if (!backend) {
           $msg
             .css('color', '#c00')
@@ -155,6 +205,10 @@ define(['jquery'], function ($) {
           method: 'GET',
           dataType: 'json',
           timeout: 30000,
+          crossDomain: true,
+          xhrFields: {
+            withCredentials: false,
+          },
         })
           .done(function (boot) {
             if (!boot || !boot.installation || !boot.installation.installation_id) {
@@ -189,6 +243,10 @@ define(['jquery'], function ($) {
                 channel_id: channelId,
               }),
               timeout: 120000,
+              crossDomain: true,
+              xhrFields: {
+                withCredentials: false,
+              },
             })
               .done(function (res) {
                 var scope = res && res.scope_id ? res.scope_id : '';
@@ -217,17 +275,10 @@ define(['jquery'], function ($) {
                 $btn.prop('disabled', false);
               });
           })
-          .fail(function () {
+          .fail(function (xhr, textStatus, errorThrown) {
             $msg
               .css('color', '#c00')
-              .text(
-                tr(
-                  'pulse.network',
-                  ru
-                    ? 'Не удалось связаться с сервером (bootstrap).'
-                    : 'Could not reach server (bootstrap).',
-                ),
-              );
+              .text(describeBootstrapFailure(xhr, textStatus, errorThrown, ru));
             $btn.prop('disabled', false);
           });
       });
@@ -256,8 +307,9 @@ define(['jquery'], function ($) {
         return true;
       },
       onSave: function () {
+        var rawUrl = readField('backend_url');
         return {
-          backend_url: readField('backend_url'),
+          backend_url: rawUrl ? normalizeBackendUrl(rawUrl) : '',
           api_key: readField('api_key'),
           channel_id: readField('channel_id'),
         };
