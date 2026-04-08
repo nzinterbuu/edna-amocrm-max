@@ -16,8 +16,7 @@
     "settings": {
       "submenu": {
         "edna_widget_settings": {
-          "title": "left_menu.settings_page",
-          "sort": 1
+          "title": "left_menu.settings_page"
         }
       }
     }
