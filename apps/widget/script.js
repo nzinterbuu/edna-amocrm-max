@@ -65,18 +65,16 @@ define(['jquery'], function () {
       advancedSettings: function () {
         var title = tr('advanced.title', 'Settings');
         var backendLabel = tr('settings.backend_url', 'Backend URL');
-        return renderBackendUrlForm(title, backendLabel);
-      },
-      initMenuPage: function (params) {
-        if (!params || params.location !== 'settings') {
-          return;
+        var html = renderBackendUrlForm(title, backendLabel);
+        var widgetCode = '';
+        var s = self.get_settings ? self.get_settings() : {};
+        if (s && s.widget_code) {
+          widgetCode = String(s.widget_code);
         }
-        if (params.subitem_code !== 'edna_widget_settings') {
-          return;
+        if (widgetCode) {
+          $('#work-area-' + widgetCode).html(html);
         }
-        var title = tr('left_menu.settings_page', 'Widget Settings');
-        var backendLabel = tr('settings.backend_url', 'Backend URL');
-        return renderBackendUrlForm(title, backendLabel);
+        return true;
       },
       onSave: function () {
         return true;

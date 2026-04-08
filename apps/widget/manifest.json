@@ -12,15 +12,6 @@
     }
   },
   "locations": ["settings", "advanced_settings"],
-  "left_menu": {
-    "settings": {
-      "submenu": {
-        "edna_widget_settings": {
-          "title": "left_menu.settings_page"
-        }
-      }
-    }
-  },
   "advanced": {
     "title": "advanced.title"
   },
