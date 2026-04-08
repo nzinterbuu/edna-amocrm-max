@@ -11,7 +11,10 @@
       "email": "support@example.com"
     }
   },
-  "locations": ["settings"],
+  "locations": ["settings", "advanced_settings"],
+  "advanced": {
+    "title": "advanced.title"
+  },
   "settings": {
     "backend_url": {
       "name": "settings.backend_url",

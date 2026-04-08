@@ -4,6 +4,9 @@
     "description": "Интеграция MAX (edna Pulse) с amoCRM Inbox.",
     "short_description": "MAX и Inbox"
   },
+  "advanced": {
+    "title": "Настройки"
+  },
   "settings": {
     "backend_url": "Backend URL"
   }
