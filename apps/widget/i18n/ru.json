@@ -7,6 +7,9 @@
   "advanced": {
     "title": "Настройки"
   },
+  "left_menu": {
+    "settings_page": "Настройки виджета"
+  },
   "settings": {
     "backend_url": "Backend URL"
   }

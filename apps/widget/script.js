@@ -30,6 +30,25 @@ define(['jquery'], function () {
       return typeof node === 'string' ? node : fallback;
     }
 
+    function renderBackendUrlForm(title, backendLabel) {
+      var backendUrl = readBackendUrl();
+      return (
+        '<div class="edna-settings-page">' +
+        '<div style="font-weight:600;margin-bottom:8px;">' +
+        title +
+        '</div>' +
+        '<div class="widget_settings_block__item_field">' +
+        '<label class="widget_settings_block__title_field">' +
+        backendLabel +
+        '</label>' +
+        '<input type="text" name="backend_url" value="' +
+        backendUrl.replace(/"/g, '&quot;') +
+        '" class="widget_settings_block__input_field" />' +
+        '</div>' +
+        '</div>'
+      );
+    }
+
     this.callbacks = {
       init: function () {
         return true;
@@ -46,22 +65,18 @@ define(['jquery'], function () {
       advancedSettings: function () {
         var title = tr('advanced.title', 'Settings');
         var backendLabel = tr('settings.backend_url', 'Backend URL');
-        var backendUrl = readBackendUrl();
-        var html =
-          '<div class="edna-advanced-settings">' +
-          '<div style="font-weight:600;margin-bottom:8px;">' +
-          title +
-          '</div>' +
-          '<div class="widget_settings_block__item_field">' +
-          '<label class="widget_settings_block__title_field">' +
-          backendLabel +
-          '</label>' +
-          '<input type="text" name="backend_url" value="' +
-          backendUrl.replace(/"/g, '&quot;') +
-          '" class="widget_settings_block__input_field" />' +
-          '</div>' +
-          '</div>';
-        return html;
+        return renderBackendUrlForm(title, backendLabel);
+      },
+      initMenuPage: function (params) {
+        if (!params || params.location !== 'settings') {
+          return;
+        }
+        if (params.subitem_code !== 'edna_widget_settings') {
+          return;
+        }
+        var title = tr('left_menu.settings_page', 'Widget Settings');
+        var backendLabel = tr('settings.backend_url', 'Backend URL');
+        return renderBackendUrlForm(title, backendLabel);
       },
       onSave: function () {
         return true;
