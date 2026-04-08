@@ -9,5 +9,19 @@
   },
   "settings": {
     "backend_url": "Backend URL"
+  },
+  "pulse": {
+    "section_title": "Канал MAX (edna Pulse)",
+    "api_key": "API-ключ",
+    "channel_id": "ID канала",
+    "connect": "Подключить канал",
+    "display_name": "Канал MAX (edna Pulse)",
+    "need_backend": "Укажите URL бэкенда и сохраните настройки.",
+    "fill_credentials": "Введите API-ключ и ID канала.",
+    "need_account": "Не удалось определить аккаунт amoCRM.",
+    "need_installation": "Установка не найдена. Сначала пройдите OAuth интеграции.",
+    "success": "Канал подключён. scope_id: ",
+    "error": "Ошибка: ",
+    "network": "Не удалось связаться с сервером (bootstrap)."
   }
 }

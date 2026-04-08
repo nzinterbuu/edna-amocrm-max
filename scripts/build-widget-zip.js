@@ -1,5 +1,6 @@
 /**
  * Собирает apps/widget/widget.zip с плоской структурой (без вложенной папки widget/).
+ * Включает images/, если папка есть (требование Kommo для логотипов).
  * Windows: PowerShell Compress-Archive; иначе: zip CLI.
  */
 'use strict';
@@ -12,7 +13,12 @@ const root = path.join(__dirname, '..');
 const widgetDir = path.join(root, 'apps', 'widget');
 const outZip = path.join(widgetDir, 'widget.zip');
 
-const required = ['manifest.json', 'script.js', path.join('i18n', 'ru.json'), path.join('i18n', 'en.json')];
+const required = [
+  'manifest.json',
+  'script.js',
+  path.join('i18n', 'ru.json'),
+  path.join('i18n', 'en.json'),
+];
 for (const rel of required) {
   const p = path.join(widgetDir, rel);
   if (!fs.existsSync(p)) {
@@ -21,24 +27,38 @@ for (const rel of required) {
   }
 }
 
+const imagesDir = path.join(widgetDir, 'images');
+if (!fs.existsSync(imagesDir)) {
+  console.warn('Warning: images/ missing — Kommo upload may fail.');
+}
+
 if (fs.existsSync(outZip)) {
   fs.unlinkSync(outZip);
 }
 
 if (process.platform === 'win32') {
-  const manifest = path.join(widgetDir, 'manifest.json').replace(/'/g, "''");
-  const script = path.join(widgetDir, 'script.js').replace(/'/g, "''");
-  const i18n = path.join(widgetDir, 'i18n').replace(/'/g, "''");
-  const dest = outZip.replace(/'/g, "''");
+  const esc = (p) => p.replace(/'/g, "''");
+  const parts = [
+    path.join(widgetDir, 'manifest.json'),
+    path.join(widgetDir, 'script.js'),
+    path.join(widgetDir, 'i18n'),
+  ];
+  if (fs.existsSync(imagesDir)) {
+    parts.push(imagesDir);
+  }
+  const literal = parts.map((p) => `'${esc(p)}'`).join(',');
   execSync(
-    `powershell -NoProfile -Command "Compress-Archive -LiteralPath '${manifest}','${script}','${i18n}' -DestinationPath '${dest}' -Force"`,
+    `powershell -NoProfile -Command "Compress-Archive -LiteralPath ${literal} -DestinationPath '${esc(outZip)}' -Force"`,
     { stdio: 'inherit', cwd: widgetDir },
   );
 } else {
-  execSync('zip -r widget.zip manifest.json script.js i18n', {
-    stdio: 'inherit',
-    cwd: widgetDir,
-  });
+  const hasImages = fs.existsSync(imagesDir);
+  execSync(
+    hasImages
+      ? 'zip -r widget.zip manifest.json script.js i18n images'
+      : 'zip -r widget.zip manifest.json script.js i18n',
+    { stdio: 'inherit', cwd: widgetDir },
+  );
 }
 
 console.log('OK:', outZip);

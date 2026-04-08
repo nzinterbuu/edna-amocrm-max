@@ -9,5 +9,19 @@
   },
   "settings": {
     "backend_url": "Backend URL"
+  },
+  "pulse": {
+    "section_title": "MAX channel (edna Pulse)",
+    "api_key": "API key",
+    "channel_id": "Channel ID",
+    "connect": "Connect channel",
+    "display_name": "MAX channel (edna Pulse)",
+    "need_backend": "Set backend URL and save settings.",
+    "fill_credentials": "Enter API key and channel ID.",
+    "need_account": "Could not detect amoCRM account.",
+    "need_installation": "Installation not found. Complete OAuth first.",
+    "success": "Connected. scope_id: ",
+    "error": "Error: ",
+    "network": "Could not reach server (bootstrap)."
   }
 }
