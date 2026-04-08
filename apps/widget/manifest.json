@@ -1,7 +1,5 @@
 {
-  "locations": ["settings"],
   "widget": {
-    "code": "edna_max_widget",
     "name": "widget.name",
     "description": "widget.description",
     "short_description": "widget.short_description",
@@ -9,12 +7,16 @@
     "interface_version": 2,
     "locale": ["ru", "en"],
     "installation": true,
-    "settings": {
-      "backend_url": {
-        "name": "settings.backend_url",
-        "type": "text",
-        "required": true
-      }
+    "support": {
+      "email": "support@example.com"
+    }
+  },
+  "locations": ["settings"],
+  "settings": {
+    "backend_url": {
+      "name": "settings.backend_url",
+      "type": "text",
+      "required": false
     }
   }
 }

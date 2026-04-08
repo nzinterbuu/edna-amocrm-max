@@ -5,6 +5,6 @@
     "short_description": "MAX and Inbox"
   },
   "settings": {
-    "backend_url": "Integration backend URL (https://…)"
+    "backend_url": "Backend URL"
   }
 }

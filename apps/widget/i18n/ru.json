@@ -5,6 +5,6 @@
     "short_description": "MAX и Inbox"
   },
   "settings": {
-    "backend_url": "URL бэкенда интеграции (https://…)"
+    "backend_url": "Backend URL"
   }
 }
