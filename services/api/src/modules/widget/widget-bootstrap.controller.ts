@@ -8,9 +8,9 @@ export class WidgetBootstrapController {
 
   @Get('bootstrap')
   async bootstrap(
+    @Res({ passthrough: false }) res: Response,
     @Query('amocrm_account_id') accountId: string,
     @Query('referer') _referer?: string,
-    @Res({ passthrough: false }) res: Response,
   ) {
     res.set({
       'Cache-Control':
