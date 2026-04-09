@@ -1,6 +1,10 @@
 import axios, { AxiosInstance } from 'axios';
 import { Injectable, Logger } from '@nestjs/common';
 import { AppConfigService } from '../../config/app-config.service';
+import {
+  extractSubdomainFromHostname,
+  normalizeRefererToHostname,
+} from './amocrm-oauth-referer';
 
 export interface AmocrmTokenResponse {
   token_type: string;
@@ -28,24 +32,8 @@ export class AmocrmOauthService {
   constructor(private readonly appConfig: AppConfigService) {}
 
   parseSubdomainFromReferer(referer: string): string {
-    try {
-      const u = new URL(referer);
-      const host = u.hostname;
-      const parts = host.split('.');
-      const isAmo =
-        host.endsWith('amocrm.ru') ||
-        host.endsWith('amocrm.com') ||
-        host.endsWith('kommo.com');
-      if (parts.length >= 3 && parts[0] !== 'www') {
-        return parts[0];
-      }
-      if (isAmo) {
-        return parts[0] ?? host;
-      }
-    } catch {
-      /* ignore */
-    }
-    throw new Error(`Cannot parse subdomain from referer: ${referer}`);
+    const hostname = normalizeRefererToHostname(referer);
+    return extractSubdomainFromHostname(hostname);
   }
 
   private apiBase(subdomain: string): string {
