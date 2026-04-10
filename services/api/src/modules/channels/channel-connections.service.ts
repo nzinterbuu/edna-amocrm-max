@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../db/prisma.service';
 import { AmocrmChatClient } from '../amocrm/amocrm-chat.client';
 import { InstallationTokensService } from '../installations/installation-tokens.service';
@@ -31,6 +31,22 @@ export class ChannelConnectionsService {
       },
     });
 
+    const existing = await this.prisma.channelConnection.findFirst({
+      where: {
+        installationId: inst.id,
+        maxBotId: params.maxBotId,
+      },
+    });
+
+    if (existing?.status === 'active') {
+      throw new ConflictException({
+        message: 'Channel already connected',
+        id: existing.id,
+        status: existing.status,
+        scope_id: existing.scopeId,
+      });
+    }
+
     const amojoId = await this.tokens.getAmojoAccountId(inst.id);
     if (!amojoId) {
       throw new Error(
@@ -42,6 +58,25 @@ export class ChannelConnectionsService {
       amojoId,
       params.displayName,
     );
+
+    if (existing) {
+      const row = await this.prisma.channelConnection.update({
+        where: { id: existing.id },
+        data: {
+          ednaTenantId: tenant.id,
+          displayName: params.displayName,
+          channelId: this.appConfig.amocrmChannelId,
+          scopeId: connected.scope_id,
+          status: 'active',
+          disconnectedAt: null,
+        },
+      });
+      return {
+        id: row.id,
+        status: row.status,
+        scope_id: row.scopeId,
+      };
+    }
 
     const row = await this.prisma.channelConnection.create({
       data: {
@@ -75,14 +110,17 @@ export class ChannelConnectionsService {
         this.log.warn(`amo disconnect call failed (continuing): ${e}`);
       }
     }
-    await this.prisma.channelConnection.update({
+    const row = await this.prisma.channelConnection.update({
       where: { id: connectionId },
       data: {
         status: 'disconnected',
         disconnectedAt: new Date(),
       },
     });
-    return { ok: true as const };
+    return {
+      id: row.id,
+      status: row.status,
+    };
   }
 
   async health(connectionId: string) {

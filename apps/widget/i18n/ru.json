@@ -5,20 +5,26 @@
     "short_description": "MAX и Inbox"
   },
   "settings": {
-    "backend_url": "Backend URL",
     "api_key": "API-ключ",
-    "channel_id": "ID канала"
+    "channel_id": "Название подписи"
   },
   "pulse": {
-    "connect": "Подключить канал",
+    "connect_channel": "Подключить канал",
+    "disconnect_channel": "Отключить канал",
+    "channel_active": "Канал активен",
+    "channel_inactive": "Канал отключен",
+    "connect_success": "Канал успешно подключён.",
+    "connect_failed": "Не удалось подключить канал.",
+    "disconnect_success": "Канал отключён.",
+    "disconnect_failed": "Не удалось отключить канал.",
     "display_name": "Канал MAX (edna Pulse)",
-    "need_backend": "Укажите Backend URL и сохраните настройки при необходимости.",
-    "fill_credentials": "Введите API-ключ и ID канала.",
+    "fill_credentials": "Введите API-ключ и название подписи.",
     "need_account": "Не удалось определить аккаунт amoCRM.",
     "need_installation": "Установка не найдена. Сначала пройдите OAuth интеграции.",
-    "success": "Канал подключён. scope_id: ",
+    "already_connected": "Канал уже подключён. Обновлено состояние.",
     "error": "Ошибка: ",
     "network": "Не удалось связаться с сервером (bootstrap).",
-    "bootstrap_hint_status0": "Частая причина: неверный Backend URL (нужен полный https://…), CORS, смешанный контент или SSL. Проверьте ответ API в отдельной вкладке браузера."
+    "bootstrap_hint_status0": "Частая причина: CORS, смешанный контент (страница https и API http), сеть или SSL. Откройте в браузере URL bootstrap с amocrm_account_id и проверьте ответ.",
+    "api_key_stored": "Ключ сохранён на сервере"
   }
 }

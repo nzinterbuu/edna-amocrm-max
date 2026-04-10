@@ -25,22 +25,25 @@ export class WidgetBootstrapController {
       return res.status(400).json({
         error: 'amocrm_account_id required',
         installation: null,
-        channels: [],
+        channel: null,
       });
     }
 
     const inst = await this.prisma.installation.findUnique({
       where: { amocrmAccountId: accountId },
-      include: {
-        channelConnections: { where: { status: 'active' } },
-      },
     });
     if (!inst) {
       return res.status(200).json({
         installation: null,
-        channels: [],
+        channel: null,
       });
     }
+
+    const latestChannel = await this.prisma.channelConnection.findFirst({
+      where: { installationId: inst.id },
+      orderBy: { updatedAt: 'desc' },
+    });
+
     return res.status(200).json({
       installation: {
         status: inst.status,
@@ -48,13 +51,15 @@ export class WidgetBootstrapController {
         subdomain: inst.amocrmSubdomain,
         installation_id: inst.id,
       },
-      channels: inst.channelConnections.map((c) => ({
-        id: c.id,
-        display_name: c.displayName,
-        status: c.status,
-        max_bot_id: c.maxBotId,
-        scope_id: c.scopeId,
-      })),
+      channel: latestChannel
+        ? {
+            id: latestChannel.id,
+            status: latestChannel.status,
+            display_name: latestChannel.displayName,
+            max_bot_id: latestChannel.maxBotId,
+            scope_id: latestChannel.scopeId,
+          }
+        : null,
     });
   }
 }

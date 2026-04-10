@@ -5,20 +5,26 @@
     "short_description": "MAX and Inbox"
   },
   "settings": {
-    "backend_url": "Backend URL",
     "api_key": "API key",
-    "channel_id": "Channel ID"
+    "channel_id": "Signature name"
   },
   "pulse": {
-    "connect": "Connect channel",
+    "connect_channel": "Connect channel",
+    "disconnect_channel": "Disconnect channel",
+    "channel_active": "Channel active",
+    "channel_inactive": "Channel disconnected",
+    "connect_success": "Channel connected successfully.",
+    "connect_failed": "Could not connect channel.",
+    "disconnect_success": "Channel disconnected.",
+    "disconnect_failed": "Could not disconnect channel.",
     "display_name": "MAX channel (edna Pulse)",
-    "need_backend": "Set Backend URL and save settings if needed.",
-    "fill_credentials": "Enter API key and channel ID.",
+    "fill_credentials": "Enter API key and signature name.",
     "need_account": "Could not detect amoCRM account.",
     "need_installation": "Installation not found. Complete OAuth first.",
-    "success": "Connected. scope_id: ",
+    "already_connected": "Channel is already connected. State refreshed.",
     "error": "Error: ",
     "network": "Could not reach server (bootstrap).",
-    "bootstrap_hint_status0": "Common causes: Backend URL must be full https://…, CORS, mixed content, or SSL. Open the bootstrap URL in a browser tab to verify."
+    "bootstrap_hint_status0": "Common causes: CORS, mixed content (https page → http API), network, or SSL. Open the bootstrap URL with amocrm_account_id in a browser tab to verify.",
+    "api_key_stored": "Key stored on server"
   }
 }
