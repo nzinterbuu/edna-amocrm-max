@@ -1,11 +1,12 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Headers,
+  Logger,
   Param,
   Post,
   Req,
-  BadRequestException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AmocrmWebhookValidator } from '../amocrm/amocrm-webhook.validator';
@@ -15,6 +16,8 @@ import { WebhookLogService } from './webhook-log.service';
 
 @Controller('api/webhooks/amocrm')
 export class AmocrmWebhookController {
+  private readonly logger = new Logger(AmocrmWebhookController.name);
+
   constructor(
     private readonly validator: AmocrmWebhookValidator,
     private readonly outbound: OutboundAmocrmService,
@@ -30,9 +33,16 @@ export class AmocrmWebhookController {
   ) {
     const raw = req.rawBody;
     if (!raw?.length) {
+      this.logger.warn(
+        `amoCRM webhook: missing raw body for signature check (scopeId=${scopeId}, hasRawBody=${Boolean(req.rawBody)})`,
+      );
       throw new BadRequestException('raw body required for signature check');
     }
-    this.validator.assertValid(raw, sig);
+
+    this.logger.log(
+      `amoCRM webhook: POST scopeId=${scopeId} rawBodyLength=${raw.length} hasXSignature=${Boolean(sig?.trim())}`,
+    );
+    this.validator.assertValid(raw, sig, { scopeId });
 
     const msg = body?.message as Record<string, unknown> | undefined;
     const inner = msg?.message as Record<string, unknown> | undefined;
