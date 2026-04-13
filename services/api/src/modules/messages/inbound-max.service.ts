@@ -34,6 +34,14 @@ export class InboundMaxService {
       return { accepted: false, error: 'unknown_connection' as const };
     }
 
+    const scopeId = conn.scopeId;
+    if (!scopeId) {
+      this.log.warn(
+        `Active channel ${connectionId} has no scope_id; cannot forward to amoCRM`,
+      );
+      return { accepted: false, error: 'scope_not_ready' as const };
+    }
+
     const sourceMessageId = String(parsed.id);
 
     try {
@@ -100,7 +108,7 @@ export class InboundMaxService {
     try {
       const amoResp = await this.retries.withRetries(
         'amo-inbound-new-message',
-        () => this.chat.sendNewMessage(conn.scopeId, amoPayload),
+        () => this.chat.sendNewMessage(scopeId, amoPayload),
       );
       const amoMsgid = amoResp.new_message?.msgid;
       await this.prisma.messageMapping.updateMany({
