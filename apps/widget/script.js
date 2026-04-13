@@ -306,6 +306,13 @@ define(['jquery'], function ($) {
         if (j && Array.isArray(j.message)) {
           return j.message.join('; ');
         }
+        if (j && j.message && typeof j.message === 'object') {
+          try {
+            return JSON.stringify(j.message);
+          } catch (e2) {
+            /* ignore */
+          }
+        }
         if (j && typeof j.error === 'string') {
           return j.error;
         }
@@ -322,6 +329,7 @@ define(['jquery'], function ($) {
       $area.on('click.ednaPulse', '.edna-pulse-connect', function () {
         var ru = isRuLocale();
         var $msg = $area.find('.edna-pulse-msg');
+        var $btnConn = $area.find('.edna-pulse-connect');
         $msg.text('').css('color', '');
 
         var apiKey = readField('api_key');
@@ -329,7 +337,7 @@ define(['jquery'], function ($) {
         if (!apiKey || !channelId) {
           $msg
             .css('color', '#c00')
-            .text(tr('pulse.fill_credentials', ru ? 'Заполните поля.' : 'Fill in the fields.'));
+            .text(tr('pulse.fill_credentials', ru ? 'Введите API-ключ и название подписи.' : 'Enter API key and subscription name.'));
           return;
         }
 
@@ -341,7 +349,17 @@ define(['jquery'], function ($) {
           return;
         }
 
-        $area.find('.edna-pulse-connect').prop('disabled', true);
+        $btnConn.prop('disabled', true);
+        $msg
+          .css('color', '#666')
+          .text(
+            tr(
+              'pulse.connect_progress',
+              ru
+                ? 'Проверка подписи и настройка callback…'
+                : 'Verifying subscription and configuring callback…',
+            ),
+          );
 
         $.ajax({
           url: apiUrl('/api/widget/bootstrap?amocrm_account_id=') + encodeURIComponent(accountId),
@@ -357,6 +375,7 @@ define(['jquery'], function ($) {
               $msg
                 .css('color', '#c00')
                 .text(tr('pulse.need_installation', ru ? 'Нет установки.' : 'No installation.'));
+              $btnConn.prop('disabled', false);
               fetchBootstrap(function () {});
               return;
             }
@@ -382,9 +401,7 @@ define(['jquery'], function ($) {
               xhrFields: { withCredentials: false },
             })
               .done(function () {
-                $msg
-                  .css('color', '#1a7f37')
-                  .text(tr('pulse.connect_success', ru ? 'Подключено.' : 'Connected.'));
+                $msg.text('');
               })
               .fail(function (xhr) {
                 if (xhr.status === 409) {
@@ -411,6 +428,7 @@ define(['jquery'], function ($) {
             $msg
               .css('color', '#c00')
               .text(describeBootstrapFailure(xhr, textStatus, errorThrown, ru));
+            $btnConn.prop('disabled', false);
             fetchBootstrap(function () {});
           });
       });

@@ -13,7 +13,7 @@ export class CreateChannelDto {
   @MinLength(1)
   api_key!: string;
 
-  /** ID канала MAX / sender в Pulse (сохраняется как max_bot_id) */
+  /** Название подписи в Pulse — поле sender в channel-profile (max_bot_id) */
   @IsString()
   @MinLength(1)
   channel_id!: string;

@@ -49,7 +49,9 @@ model ChannelConnection {
   displayName      String    @map("display_name") @db.VarChar(255)
   maxBotId         String    @map("max_bot_id") @db.VarChar(128)
   channelId        String    @map("channel_id") @db.VarChar(128)
-  scopeId          String    @unique @map("scope_id") @db.VarChar(255)
+  scopeId          String?   @unique @map("scope_id") @db.VarChar(255)
+  /** subjectId from edna Pulse channel profile (callbacks, diagnostics) */
+  ednaSubjectId    String?   @map("edna_subject_id") @db.VarChar(128)
   status           String    @default("active") @db.VarChar(32)
   connectedAt      DateTime  @default(now()) @map("connected_at") @db.Timestamptz(6)
   disconnectedAt   DateTime? @map("disconnected_at") @db.Timestamptz(6)

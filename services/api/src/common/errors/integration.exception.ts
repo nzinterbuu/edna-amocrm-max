@@ -16,3 +16,21 @@ export class SignatureInvalidException extends IntegrationException {
     super('SIGNATURE_INVALID', message, HttpStatus.FORBIDDEN);
   }
 }
+
+export class SenderNotFoundError extends IntegrationException {
+  constructor() {
+    super('SENDER_NOT_FOUND', 'Такой подписи нет', HttpStatus.BAD_REQUEST);
+  }
+}
+
+export class SenderNotMaxBotError extends IntegrationException {
+  constructor() {
+    super('SENDER_NOT_MAX_BOT', 'Это не подпись MAX_BOT', HttpStatus.BAD_REQUEST);
+  }
+}
+
+export class SenderInactiveError extends IntegrationException {
+  constructor() {
+    super('SENDER_INACTIVE', 'Эта подпись неактивна', HttpStatus.BAD_REQUEST);
+  }
+}

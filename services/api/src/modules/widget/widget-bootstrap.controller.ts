@@ -58,6 +58,7 @@ export class WidgetBootstrapController {
             display_name: latestChannel.displayName,
             max_bot_id: latestChannel.maxBotId,
             scope_id: latestChannel.scopeId,
+            edna_subject_id: latestChannel.ednaSubjectId,
           }
         : null,
     });

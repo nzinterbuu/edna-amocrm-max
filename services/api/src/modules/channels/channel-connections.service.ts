@@ -3,6 +3,8 @@ import { PrismaService } from '../../db/prisma.service';
 import { AmocrmChatClient } from '../amocrm/amocrm-chat.client';
 import { InstallationTokensService } from '../installations/installation-tokens.service';
 import { AppConfigService } from '../../config/app-config.service';
+import { EdnaPulseClient } from '../edna/edna-pulse.client';
+import { IntegrationException } from '../../common/errors/integration.exception';
 
 @Injectable()
 export class ChannelConnectionsService {
@@ -13,6 +15,7 @@ export class ChannelConnectionsService {
     private readonly chat: AmocrmChatClient,
     private readonly tokens: InstallationTokensService,
     private readonly appConfig: AppConfigService,
+    private readonly ednaPulse: EdnaPulseClient,
   ) {}
 
   async create(params: {
@@ -20,6 +23,7 @@ export class ChannelConnectionsService {
     displayName: string;
     ednaTenantId: string;
     maxBotId: string;
+    pulseApiKey: string;
   }) {
     const inst = await this.prisma.installation.findFirstOrThrow({
       where: { id: params.installationId, status: 'active' },
@@ -31,10 +35,16 @@ export class ChannelConnectionsService {
       },
     });
 
+    const maxBotId = params.maxBotId.trim();
+    const { subjectId } = await this.ednaPulse.resolveActiveMaxBotSubjectId(
+      params.pulseApiKey,
+      maxBotId,
+    );
+
     const existing = await this.prisma.channelConnection.findFirst({
       where: {
         installationId: inst.id,
-        maxBotId: params.maxBotId,
+        maxBotId,
       },
     });
 
@@ -54,46 +64,106 @@ export class ChannelConnectionsService {
       );
     }
 
-    const connected = await this.chat.connectChannel(
-      amojoId,
-      params.displayName,
-    );
+    const baseUrl = this.appConfig.appBaseUrl.replace(/\/$/, '');
+    let connectionId: string;
+    let createdNewPending = false;
 
-    if (existing) {
-      const row = await this.prisma.channelConnection.update({
+    if (existing?.status === 'pending') {
+      connectionId = existing.id;
+      await this.prisma.channelConnection.update({
         where: { id: existing.id },
         data: {
           ednaTenantId: tenant.id,
           displayName: params.displayName,
+          ednaSubjectId: subjectId,
           channelId: this.appConfig.amocrmChannelId,
-          scopeId: connected.scope_id,
-          status: 'active',
           disconnectedAt: null,
         },
       });
-      return {
-        id: row.id,
-        status: row.status,
-        scope_id: row.scopeId,
-      };
+    } else if (existing?.status === 'disconnected') {
+      connectionId = existing.id;
+      await this.prisma.channelConnection.update({
+        where: { id: existing.id },
+        data: {
+          ednaTenantId: tenant.id,
+          displayName: params.displayName,
+          ednaSubjectId: subjectId,
+          channelId: this.appConfig.amocrmChannelId,
+          status: 'pending',
+          scopeId: null,
+          disconnectedAt: null,
+        },
+      });
+    } else {
+      const row = await this.prisma.channelConnection.create({
+        data: {
+          installationId: inst.id,
+          ednaTenantId: tenant.id,
+          displayName: params.displayName,
+          maxBotId,
+          channelId: this.appConfig.amocrmChannelId,
+          scopeId: null,
+          ednaSubjectId: subjectId,
+          status: 'pending',
+        },
+      });
+      connectionId = row.id;
+      createdNewPending = true;
     }
 
-    const row = await this.prisma.channelConnection.create({
+    const callbackUrl = `${baseUrl}/api/webhooks/max/${connectionId}`;
+
+    try {
+      await this.ednaPulse.setCallback(
+        params.pulseApiKey,
+        subjectId,
+        callbackUrl,
+      );
+    } catch (e) {
+      if (createdNewPending) {
+        await this.prisma.channelConnection
+          .delete({ where: { id: connectionId } })
+          .catch(() => undefined);
+      }
+      throw e;
+    }
+
+    let connected: { scope_id: string };
+    try {
+      connected = await this.chat.connectChannel(amojoId, params.displayName);
+    } catch (e) {
+      this.log.error(
+        `connect flow: amoCRM connectChannel failed installationId=${inst.id} connectionId=${connectionId} subjectId=${subjectId}: ${e}`,
+      );
+      throw new IntegrationException(
+        'AMO_CONNECT_FAILED',
+        'Не удалось завершить подключение канала в amoCRM. Callback в edna Pulse уже настроен — повторите попытку или обратитесь в поддержку.',
+        502,
+      );
+    }
+
+    const row = await this.prisma.channelConnection.update({
+      where: { id: connectionId },
       data: {
-        installationId: inst.id,
         ednaTenantId: tenant.id,
         displayName: params.displayName,
-        maxBotId: params.maxBotId,
         channelId: this.appConfig.amocrmChannelId,
         scopeId: connected.scope_id,
         status: 'active',
+        disconnectedAt: null,
+        ednaSubjectId: subjectId,
       },
     });
+
+    this.log.log(
+      `connect flow done: installationId=${inst.id} connectionId=${row.id} subjectId=${subjectId} status=${row.status}`,
+    );
 
     return {
       id: row.id,
       status: row.status,
       scope_id: row.scopeId,
+      edna_subject_id: row.ednaSubjectId,
     };
   }
 

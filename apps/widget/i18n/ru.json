@@ -18,6 +18,7 @@
     "disconnect_success": "Канал отключён.",
     "disconnect_failed": "Не удалось отключить канал.",
     "display_name": "Канал MAX (edna Pulse)",
+    "connect_progress": "Проверка подписи и настройка callback…",
     "fill_credentials": "Введите API-ключ и название подписи.",
     "need_account": "Не удалось определить аккаунт amoCRM.",
     "need_installation": "Установка не найдена. Сначала пройдите OAuth интеграции.",

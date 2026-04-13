@@ -29,6 +29,7 @@ export class ChannelConnectionsController {
       displayName: body.display_name,
       ednaTenantId: tenant.id,
       maxBotId: body.channel_id,
+      pulseApiKey: body.api_key,
     });
   }
 
