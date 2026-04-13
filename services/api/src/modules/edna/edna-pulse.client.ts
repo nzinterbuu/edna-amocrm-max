@@ -9,11 +9,18 @@ import {
 } from '../../common/errors/integration.exception';
 
 export interface EdnaChannelProfileItem {
+  /** Pulse UI / API: название подписи для сопоставления с вводом пользователя */
+  subject?: string;
+  /** Оставлено для совместимости с ответом API; поиск подписи идёт по `subject` */
   sender?: string;
   type?: string;
   active?: boolean;
   subjectId?: number | string;
   subject_id?: number | string;
+}
+
+export function normalizeSubject(value: string): string {
+  return String(value || '').trim().toLowerCase();
 }
 
 function channelProfileListFromPayload(raw: unknown): EdnaChannelProfileItem[] {
@@ -30,11 +37,6 @@ function channelProfileListFromPayload(raw: unknown): EdnaChannelProfileItem[] {
     }
   }
   return [];
-}
-
-function readSender(ch: EdnaChannelProfileItem): string | undefined {
-  const s = ch.sender;
-  return s != null && String(s).trim() !== '' ? String(s).trim() : undefined;
 }
 
 function readSubjectId(ch: EdnaChannelProfileItem): string | undefined {
@@ -94,14 +96,13 @@ export class EdnaPulseClient {
   }
 
   /**
-   * Validates sender name against Pulse channel list; returns subjectId string.
+   * Находит канал по полю `subject` (название подписи в Pulse), проверяет MAX_BOT и active.
    */
   async resolveActiveMaxBotSubjectId(
     apiKey: string,
-    senderName: string,
+    inputValue: string,
   ): Promise<{ subjectId: string }> {
-    const want = senderName?.trim();
-    if (!want) {
+    if (normalizeSubject(inputValue) === '') {
       throw new IntegrationException(
         'SENDER_EMPTY',
         'Название подписи обязательно',
@@ -109,15 +110,40 @@ export class EdnaPulseClient {
     }
 
     const channels = await this.getChannelProfiles(apiKey);
+    const normalizedInput = normalizeSubject(inputValue);
+
     this.log.log(
-      `edna sender check: sender="${want}" channels_count=${channels.length}`,
+      `edna subject check: subject="${inputValue}" channels_count=${channels.length}`,
     );
 
-    const match = channels.find((ch) => readSender(ch) === want);
+    const match = channels.find(
+      (ch) => normalizeSubject(String(ch.subject ?? '')) === normalizedInput,
+    );
+
     if (!match) {
+      const sample = channels
+        .slice(0, 20)
+        .map((c) => c.subject ?? null);
       this.log.warn(
-        `edna sender check: sender="${want}" found=false (no matching sender)`,
+        `edna subject check: subject="${inputValue}" found=false (no matching subject)`,
       );
+      this.log.log(`edna subject sample: ${JSON.stringify(sample)}`);
+
+      const similarMatches = channels.filter((c) => {
+        const ns = normalizeSubject(String(c.subject ?? ''));
+        if (!normalizedInput || !ns) {
+          return false;
+        }
+        return (
+          ns.includes(normalizedInput) || normalizedInput.includes(ns)
+        );
+      });
+      this.log.log(
+        `edna subject similar_matches: count=${similarMatches.length} subjects=${JSON.stringify(
+          similarMatches.slice(0, 10).map((c) => c.subject ?? null),
+        )}`,
+      );
+
       throw new SenderNotFoundError();
     }
 
@@ -125,7 +151,7 @@ export class EdnaPulseClient {
     const subjectId = readSubjectId(match);
 
     this.log.log(
-      `edna sender check: sender="${want}" found=true type=${type} active=${String(match.active)} subjectId=${subjectId ?? 'n/a'}`,
+      `edna subject check: subject="${inputValue}" found=true type=${type} active=${String(match.active)} pulse_subjectId=${subjectId ?? 'n/a'}`,
     );
 
     if (type !== 'MAX_BOT') {
@@ -136,7 +162,7 @@ export class EdnaPulseClient {
     }
     if (!subjectId) {
       this.log.warn(
-        `edna sender check: sender="${want}" missing subjectId in profile`,
+        `edna subject check: subject="${inputValue}" missing subjectId in profile`,
       );
       throw new IntegrationException(
         'EDNA_SUBJECT_ID_MISSING',
